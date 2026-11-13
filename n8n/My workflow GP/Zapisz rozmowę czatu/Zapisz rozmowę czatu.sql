@@ -1,0 +1,1 @@
+INSERT INTO rejestr_zapytan (czas, kanal, id_rozmowy, pytanie_dodatkowe, rodzaj, tresc_anonim, odpowiedz_anonim, model, czas_ms, status) SELECT $1, 'czat', $2, EXISTS(SELECT 1 FROM rejestr_zapytan r WHERE r.id_rozmowy = $3), $4, $5, $6, 'gpt-6-sol', $7, $8

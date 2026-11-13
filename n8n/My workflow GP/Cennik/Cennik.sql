@@ -1,0 +1,1 @@
+SELECT sku, nazwa, kategoria, opis, zasieg_km, max_obciazenie_kg, cena_brutto AS cena_brutto_pln, waluta, stawka_vat, dostepne_sztuki AS stan_magazynowy, dostepnosc FROM v_oferta ORDER BY kategoria, nazwa

@@ -1,0 +1,1 @@
+SELECT id_rozmowy AS thread_id, DATE_FORMAT(czas, '%Y-%m-%d %H:%i:%s') AS data, tresc_anonim AS wiadomosc_klienta, COALESCE(odpowiedz_anonim, '') AS odpowiedz_agenta, status AS decyzja, rodzaj AS kategoria FROM rejestr_zapytan WHERE id_rozmowy = $1 ORDER BY czas, zapytanie_id
