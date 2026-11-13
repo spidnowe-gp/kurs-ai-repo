@@ -1,0 +1,87 @@
+/* Arkusz stylów formularza – Moduł 3 (HTML, CSS i formularz) */
+
+:root {
+  --kolor-glowny: #1f5f8b;      /* ćwiczenie 3.3: zmień na kolor marki */
+  --kolor-tekstu: #1d1d1f;
+  --kolor-tla: #ffffff;
+  --kolor-pola: #f4f6f8;
+  --kolor-bledu: #b3261e;
+  --kolor-sukcesu: #1e7b4f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  color: var(--kolor-tekstu);
+  background: var(--kolor-tla);
+  line-height: 1.5;
+}
+
+.naglowek {
+  background: var(--kolor-glowny);
+  color: #ffffff;
+  padding: 16px 24px;
+}
+
+.logo { margin: 0; font-size: 1.5rem; font-weight: 700; }
+.podtytul { margin: 0; font-size: 0.9rem; opacity: 0.9; }
+
+.tresc-strony {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.pole { display: flex; flex-direction: column; margin-bottom: 16px; }
+.pole label { font-weight: 600; margin-bottom: 4px; }
+
+.pole input,
+.pole select,
+.pole textarea {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #8a94a0;
+  border-radius: 6px;
+  background: var(--kolor-pola);
+}
+
+.pole input:focus,
+.pole select:focus,
+.pole textarea:focus,
+.przycisk-glowny:focus {
+  outline: 3px solid #f2a33a;
+  outline-offset: 2px;
+}
+
+.pole-zgoda { flex-direction: row; align-items: flex-start; gap: 8px; }
+.pole-zgoda label { font-weight: 400; margin: 0; }
+
+.podpowiedz { color: #4a5560; margin-top: 4px; }
+.informacja-ai { font-size: 0.9rem; color: #4a5560; }
+
+.przycisk-glowny {
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--kolor-glowny);
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  cursor: pointer;
+}
+
+.przycisk-glowny:disabled { opacity: 0.6; cursor: wait; }
+
+.komunikat { padding: 12px 16px; border-radius: 6px; margin: 16px 0; }
+.komunikat.blad { background: #fde8e7; color: var(--kolor-bledu); }
+.komunikat.sukces { background: #e3f4ea; color: var(--kolor-sukcesu); }
+
+.stopka { font-size: 0.85rem; color: #4a5560; text-align: center; padding: 16px; }
+
+/* Ćwiczenie 3.3: układ na telefonie – sprawdź w narzędziach przeglądarki (tryb urządzenia) */
+@media (max-width: 480px) {
+  .naglowek { padding: 12px 16px; }
+  .przycisk-glowny { width: 100%; }
+}

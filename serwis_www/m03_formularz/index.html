@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zgłoś sprawę – VeloNova (firma fikcyjna)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="naglowek">
+    <p class="logo">VeloNova</p>
+    <p class="podtytul">Centrum pomocy · dane fikcyjne – materiał szkoleniowy</p>
+  </header>
+
+  <main class="tresc-strony">
+    <h1>Zgłoś sprawę</h1>
+    <p>Odpowiemy w ciągu 2 dni roboczych. Pola oznaczone * są wymagane.</p>
+
+    <form id="formularz-zgloszenia" action="/zgloszenie" method="post">
+      <div class="pole">
+        <label for="imie_nazwisko">Imię i nazwisko *</label>
+        <input type="text" id="imie_nazwisko" name="imie_nazwisko" required autocomplete="name">
+      </div>
+
+      <div class="pole">
+        <label for="email">Adres e-mail *</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+
+      <div class="pole">
+        <label for="telefon">Telefon</label>
+        <input type="tel" id="telefon" name="telefon" autocomplete="tel">
+      </div>
+
+      <div class="pole">
+        <label for="numer_zamowienia">Numer zamówienia</label>
+        <input type="text" id="numer_zamowienia" name="numer_zamowienia"
+               pattern="VN-[0-9]{4}-[0-9]{5}" placeholder="VN-2026-10412"
+               aria-describedby="numer-podpowiedz">
+        <small id="numer-podpowiedz" class="podpowiedz">Format: VN-RRRR-NNNNN. Zostaw puste, jeśli sprawa nie dotyczy zamówienia.</small>
+      </div>
+
+      <div class="pole">
+        <label for="temat">Czego dotyczy sprawa? *</label>
+        <select id="temat" name="temat" required>
+          <option value="">– wybierz –</option>
+          <option value="reklamacja">Reklamacja produktu</option>
+          <option value="zamowienie">Zamówienie i dostawa</option>
+          <option value="zwrot">Zwrot towaru</option>
+          <option value="faktura">Faktura</option>
+          <option value="pytanie_techniczne">Pytanie techniczne</option>
+          <option value="inne">Inna sprawa</option>
+        </select>
+      </div>
+
+      <div class="pole">
+        <label for="tresc">Opis sprawy *</label>
+        <textarea id="tresc" name="tresc" rows="6" minlength="20" maxlength="2000" required></textarea>
+      </div>
+
+      <div class="pole pole-zgoda">
+        <input type="checkbox" id="zgoda" name="zgoda" value="tak" required>
+        <label for="zgoda">Zgadzam się na przetwarzanie danych w celu obsługi zgłoszenia. *</label>
+      </div>
+
+      <p class="informacja-ai">Propozycję odpowiedzi przygotowuje system AI. Każdą odpowiedź sprawdza i wysyła pracownik.</p>
+
+      <button type="submit" class="przycisk-glowny">Wyślij zgłoszenie</button>
+    </form>
+  </main>
+
+  <footer class="stopka">
+    <p>VeloNova Sp. z o.o. – firma fikcyjna, strona ćwiczeniowa Kursu Specjalista AI (MARTYKON Academy).</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zapytaj o hulajnogę lub rower – VeloNova (firma fikcyjna)</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Okno czatu n8n (oficjalny widżet @n8n/chat, wersja przypięta) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@n8n/chat@1.43.3/dist/style.css">
+</head>
+<body>
+  <header class="naglowek">
+    <p class="logo">VeloNova</p>
+    <p class="podtytul">Hulajnogi i rowery elektryczne · dane fikcyjne – materiał szkoleniowy</p>
+  </header>
+
+  <main class="tresc-strony">
+    <h1>Zapytaj o hulajnogę lub rower</h1>
+    <p>Opisz, czego szukasz – przygotujemy propozycję i wyślemy ją e-mailem. Pola oznaczone * są wymagane.
+       Możesz też porozmawiać z asystentem w oknie czatu (prawy dolny róg).</p>
+
+    <form id="formularz-zapytania" novalidate>
+      <div class="pole">
+        <label for="imie_nazwisko">Imię i nazwisko *</label>
+        <input type="text" id="imie_nazwisko" name="imie_nazwisko" required autocomplete="name">
+      </div>
+
+      <div class="pole">
+        <label for="email">Adres e-mail *</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+
+      <div class="pole">
+        <label for="rodzaj">Czego szukasz? *</label>
+        <select id="rodzaj" name="rodzaj" required>
+          <option value="">– wybierz –</option>
+          <option value="hulajnoga_miejska">Hulajnoga do miasta</option>
+          <option value="hulajnoga_terenowa">Hulajnoga terenowa</option>
+          <option value="hulajnoga_dziecieca">Hulajnoga dla dziecka</option>
+          <option value="rower_elektryczny">Rower elektryczny</option>
+          <option value="czesci_akcesoria">Części i akcesoria</option>
+        </select>
+      </div>
+
+      <div class="pole">
+        <label for="budzet">Budżet (zł brutto)</label>
+        <input type="number" id="budzet" name="budzet" min="0" step="100" aria-describedby="budzet-podpowiedz">
+        <small id="budzet-podpowiedz" class="podpowiedz">Orientacyjnie – pomoże dobrać model.</small>
+      </div>
+
+      <div class="pole">
+        <label for="tresc">Opis: do czego, kto będzie jeździł, zasięg *</label>
+        <textarea id="tresc" name="tresc" rows="6" minlength="20" maxlength="2000" required></textarea>
+      </div>
+
+      <div class="pole pole-zgoda">
+        <input type="checkbox" id="zgoda" name="zgoda" value="tak" required>
+        <label for="zgoda">Zgadzam się na przetwarzanie danych w celu przygotowania odpowiedzi. *</label>
+      </div>
+
+      <p class="informacja-ai">Propozycję odpowiedzi przygotowuje asystent AI. Dane osobowe są zastępowane znacznikami,
+        zanim treść trafi do modelu. Każdą odpowiedź sprawdza i wysyła pracownik VeloNova.</p>
+
+      <button type="submit" class="przycisk-glowny">Wyślij zapytanie</button>
+      <div id="komunikat" role="status" aria-live="polite"></div>
+    </form>
+  </main>
+
+  <footer class="stopka">
+    <p>VeloNova Sp. z o.o. – firma fikcyjna, strona ćwiczeniowa Kursu Specjalista AI (MARTYKON Academy).</p>
+  </footer>
+
+  <script src="wyslij_zapytanie.js"></script>
+  <script type="module">
+    import { createChat } from "https://cdn.jsdelivr.net/npm/@n8n/chat@1.43.3/dist/chat.bundle.es.js";
+
+    // Chat URL z węzła Chat Trigger (Make Chat Publicly Available → Embedded Chat), przepływ opublikowany
+    const ADRES_CZATU = "https://n8n-kurs.tailf6aa90.ts.net/webhook/b513a41e-f306-4ede-8b93-c96a1a8dc9d1/chat";
+
+    const aplikacjaCzatu = createChat({
+      webhookUrl: ADRES_CZATU,
+      mode: "window",
+      defaultLanguage: "en",           // widżet zna tylko klucz „en” – teksty poniżej są po polsku
+      showWelcomeScreen: false,
+      loadPreviousSession: false,
+      initialMessages: [
+        "Dzień dobry! Jestem asystentem AI VeloNova.",
+        "Pomogę dobrać hulajnogę lub rower i przyjmę zamówienie. Nie podawaj danych karty ani haseł.",
+      ],
+      i18n: {
+        en: {
+          title: "VeloNova – asystent AI",
+          subtitle: "Odpowiada asystent AI. Zamówienia sprawdza pracownik.",
+          footer: "",
+          getStarted: "Nowa rozmowa",
+          inputPlaceholder: "Napisz wiadomość…",
+        },
+      },
+    });
+
+    // Koniec rozmowy po 2 minutach bez odpowiedzi rozmówcy – komunikat pojawia się od razu w oknie czatu.
+    // Przepływ n8n stosuje tę samą zasadę: kolejną wiadomość po takiej przerwie zaczyna jako nową rozmowę.
+    const LIMIT_CISZY_MS = 2 * 60 * 1000;
+    const KOMUNIKAT_CISZY = "Rozmowa została zakończona, ponieważ przez ponad 2 minuty nie było odpowiedzi. "
+      + "Jeśli napiszesz ponownie, rozpoczniemy nową rozmowę.";
+    const czat = aplikacjaCzatu._context.provides.Chat;   // stan widżetu @n8n/chat 1.43.3 (lista messages)
+    let liczbaWiadomosci = 0;
+    let zegarCiszy = null;
+
+    if (czat) {
+      setInterval(() => {
+        const lista = czat.messages.value;
+        if (lista.length === liczbaWiadomosci) return;
+        liczbaWiadomosci = lista.length;
+        clearTimeout(zegarCiszy);
+
+        // Zegar rusza po odpowiedzi asystenta, gdy klient już coś napisał i rozmowa nie została zakończona
+        const ostatnia = lista[lista.length - 1];
+        const rozmowaTrwa = ostatnia?.sender === "bot"
+          && !String(ostatnia.text).includes("Rozmowa została zakończona")
+          && lista.some((wiadomosc) => wiadomosc.sender === "user");
+        if (rozmowaTrwa) {
+          zegarCiszy = setTimeout(() => {
+            czat.messages.value.push({ id: `koniec-ciszy-${Date.now()}`, text: KOMUNIKAT_CISZY, sender: "bot" });
+          }, LIMIT_CISZY_MS);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+{
+  "name": "Obsługa zgłoszeń – utwórz tabele (uruchom raz)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ab7e1d94-f623-5657-9798-1c97fe6a68c2",
+      "name": "Uruchom raz",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "zgloszenia",
+        "columns": {
+          "column": [
+            {
+              "name": "numer",
+              "type": "string"
+            },
+            {
+              "name": "id_wysylki",
+              "type": "string"
+            },
+            {
+              "name": "przyjeto",
+              "type": "string"
+            },
+            {
+              "name": "temat",
+              "type": "string"
+            },
+            {
+              "name": "tresc",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "name": "kategoria",
+              "type": "string"
+            },
+            {
+              "name": "priorytet",
+              "type": "string"
+            },
+            {
+              "name": "wymaga_czlowieka",
+              "type": "boolean"
+            },
+            {
+              "name": "propozycja_odpowiedzi",
+              "type": "string"
+            },
+            {
+              "name": "odpowiedz_finalna",
+              "type": "string"
+            },
+            {
+              "name": "link_zatwierdzenia",
+              "type": "string"
+            },
+            {
+              "name": "tokeny_we",
+              "type": "number"
+            },
+            {
+              "name": "tokeny_wy",
+              "type": "number"
+            },
+            {
+              "name": "koszt_usd",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "a3c29421-c7c6-5e2f-8d07-525c94cf91fd",
+      "name": "Tabela zgloszenia",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "zdarzenia",
+        "columns": {
+          "column": [
+            {
+              "name": "czas",
+              "type": "string"
+            },
+            {
+              "name": "numer",
+              "type": "string"
+            },
+            {
+              "name": "zdarzenie",
+              "type": "string"
+            },
+            {
+              "name": "opis",
+              "type": "string"
+            },
+            {
+              "name": "wykonanie",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "4e7c2444-e6ff-5a60-9209-94f1eda4b5f9",
+      "name": "Tabela zdarzenia",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "executeOnce": true
+    }
+  ],
+  "connections": {
+    "Uruchom raz": {
+      "main": [
+        [
+          {
+            "node": "Tabela zgloszenia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tabela zgloszenia": {
+      "main": [
+        [
+          {
+            "node": "Tabela zdarzenia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

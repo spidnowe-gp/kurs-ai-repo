@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formularz z błędami – pokaz w Module 3</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!--
+    Pokaz w Module 3 – formularz wygenerowany przez AI „wygląda dobrze”, ale nie działa.
+    Otwórz go przez serwer: http://localhost:8000/formularz_bledy.html
+    Znajdź 6 usterek, korzystając z narzędzi przeglądarki (Elementy, Sieć, Konsola).
+  -->
+  <header class="naglowek">
+    <p class="logo">VeloNova</p>
+  </header>
+
+  <main class="tresc-strony">
+    <h1>Zgłoś sprawę</h1>
+
+    <form id="formularz-zgloszenia" action="/zgloszenia" method="post">
+      <div class="pole">
+        <label for="imie_nazwisko">Imię i nazwisko *</label>
+        <input type="text" id="imie_nazwisko" name="imie_nazwisko" required>
+      </div>
+
+      <div class="pole">
+        <label for="email">Adres e-mail *</label>
+        <input type="email" id="email" required>
+      </div>
+
+      <div class="pole">
+        <label for="temat">Czego dotyczy sprawa? *</label>
+        <select id="temat" name="temat" required>
+          <option value="">– wybierz –</option>
+          <option>Reklamacja</option>
+          <option>Zamówienie</option>
+          <option>Zwrot</option>
+          <option>Inne</option>
+        </select>
+      </div>
+
+      <div class="pole">
+        <label for="tresc">Opis sprawy *</label>
+        <textarea id="opis" name="tresc" rows="6" required></textarea>
+      </div>
+
+      <div class="pole pole-zgoda">
+        <input type="checkbox" id="zgoda" name="zgoda" value="tak" required>
+        <label for="zgoda">Zgadzam się na przetwarzanie danych w celu obsługi zgłoszenia. *</label>
+      </div>
+
+      <button type="button" class="przycisk_glowny">Wyślij zgłoszenie</button>
+    </form>
+  </main>
+</body>
+</html>

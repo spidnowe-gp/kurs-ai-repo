@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piaskownica węzła Code – Moduł 4</title>
+<style>
+  :root { --braz:#462B1A; --pom:#E96E21; --tlo:#ffffff; --pole:#f6f4f2; --tekst:#2a2420; --blad:#b3261e; --ok:#1e7b4f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif; color:var(--tekst); background:var(--tlo); }
+  header { background:var(--braz); color:#fff; padding:12px 20px; }
+  header h1 { margin:0; font-size:1.2rem; }
+  header p { margin:2px 0 0; font-size:.85rem; opacity:.9; }
+  .pasek { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 20px; border-bottom:1px solid #e3dfdb; }
+  .pasek label { font-size:.9rem; }
+  select, button { font:inherit; padding:6px 10px; border-radius:6px; border:1px solid #b9b2ab; background:#fff; }
+  button.uruchom { background:var(--pom); color:#fff; border:none; font-weight:700; padding:8px 18px; cursor:pointer; }
+  .uklad { display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:12px; padding:12px 20px 20px; }
+  @media (max-width:1000px){ .uklad { grid-template-columns:1fr; } }
+  .kolumna h2 { font-size:.95rem; margin:0 0 6px; }
+  textarea, pre { width:100%; height:62vh; font-family:Consolas,"SF Mono",Menlo,monospace; font-size:13px; line-height:1.45;
+    border:1px solid #d6d0ca; border-radius:6px; padding:10px; background:var(--pole); margin:0; white-space:pre; overflow:auto; }
+  pre.blad { color:var(--blad); white-space:pre-wrap; }
+  .status { font-size:.85rem; margin-top:6px; min-height:1.2em; }
+  .status.ok { color:var(--ok); } .status.blad { color:var(--blad); }
+  .opis-zadania { margin:0 20px; padding:8px 12px; background:#fdf0e6; border-radius:6px; font-size:.9rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Piaskownica węzła Code (n8n) – Kurs Specjalista AI</h1>
+  <p>Kod działa wyłącznie w Twojej przeglądarce. Dane są fikcyjne. Skrót: Ctrl+Enter (macOS: Cmd+Enter) uruchamia kod.</p>
+</header>
+
+<div class="pasek">
+  <label for="zadanie">Zadanie:</label>
+  <select id="zadanie"></select>
+  <label for="tryb">Tryb:</label>
+  <select id="tryb">
+    <option value="wszystkie">Run Once for All Items – raz dla wszystkich</option>
+    <option value="kazdy">Run Once for Each Item – dla każdego elementu</option>
+  </select>
+  <button class="uruchom" id="uruchom">▶ Uruchom</button>
+</div>
+<p class="opis-zadania" id="opis"></p>
+
+<div class="uklad">
+  <div class="kolumna">
+    <h2>Wejście – elementy (JSON)</h2>
+    <textarea id="wejscie" spellcheck="false" aria-label="Dane wejściowe w formacie JSON"></textarea>
+  </div>
+  <div class="kolumna">
+    <h2>Kod JavaScript – jak w węźle Code</h2>
+    <textarea id="kod" spellcheck="false" aria-label="Kod JavaScript"></textarea>
+  </div>
+  <div class="kolumna">
+    <h2>Wyjście</h2>
+    <pre id="wyjscie" aria-live="polite"></pre>
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+// ---------- Dane przykładowe: wynik węzła Webhook (dane z formularza są w polu body) ----------
+const WEBHOOK = [
+  { headers: { "content-type": "application/json" }, params: {}, query: {},
+    body: { imie_nazwisko: "Anna Malinowska", email: "anna.malinowska@poczta.example", telefon: "",
+            numer_zamowienia: "VN-2026-10388", temat: "reklamacja",
+            tresc: "Podczas ładowania bateria w rowerze Urban E28 bardzo się nagrzała.", zgoda: "tak" } },
+  { headers: { "content-type": "application/json" }, params: {}, query: {},
+    body: { imie_nazwisko: "Tomasz Kamiński", email: "  T.Kaminski@Firma.example ", telefon: "+48 698 765 432",
+            numer_zamowienia: null, temat: "zamowienie",
+            tresc: "   Kiedy wyślecie paczkę? Status od tygodnia bez zmian.  ", zgoda: "on" } },
+  { headers: { "content-type": "application/json" }, params: {}, query: {},
+    body: { imie_nazwisko: "Ireneusz Lis", telefon: 600700800, temat: "reklamacja",
+            tresc: "Pękła rama w hulajnodze po dwóch miesiącach.", zgoda: "tak" } },
+  { headers: { "content-type": "application/json" }, params: {}, query: {},
+    body: { imie_nazwisko: "Ola", email: "ola@poczta.example", temat: "skarga",
+            tresc: "zepsute", zgoda: "" } }
+];
+
+const ODPOWIEDZI_MODELU = [
+  { odpowiedz: '{"kategoria":"reklamacja","priorytet":"wysoki","podsumowanie":"Przegrzewanie baterii podczas ładowania.","propozycja_odpowiedzi":"Prosimy nie używać roweru…"}' },
+  { odpowiedz: '```json\n{"kategoria":"zamowienie","priorytet":"normalny","podsumowanie":"Pytanie o termin wysyłki.","propozycja_odpowiedzi":"Sprawdzimy status…"}\n```' },
+  { odpowiedz: 'Oto wynik: {"kategoria":"skarga","priorytet":"pilny","podsumowanie":"Klient niezadowolony."}' },
+  { odpowiedz: 'Nie mogę przypisać kategorii – treść zgłoszenia jest nieczytelna.' }
+];
+
+// ---------- Zadania ----------
+const ZADANIA = [
+  { id: "4.1", nazwa: "4.1 Odczyt struktury JSON", tryb: "wszystkie", dane: WEBHOOK,
+    opis: "Zwróć dla każdego elementu tylko e-mail i temat. Uwaga: dane formularza są w polu body. Dlaczego pierwsza wersja zwraca puste wartości?",
+    kod:
+`// Każdy element ma postać { json: { headers, params, query, body } }
+const wynik = [];
+for (const element of $input.all()) {
+  wynik.push({
+    json: {
+      email: element.json.email,
+      temat: element.json.temat
+    }
+  });
+}
+return wynik;` },
+  { id: "4.2", nazwa: "4.2 Wybór i zmiana nazw pól", tryb: "kazdy", dane: WEBHOOK,
+    opis: "Tryb „dla każdego elementu”: zbuduj płaski obiekt { klient, email, temat, tresc } z pól body. Pozostałe pola pomiń.",
+    kod:
+`// W trybie „dla każdego elementu” bieżący element to $json
+const b = $json.body;
+return {
+  json: {
+    klient: b.imie_nazwisko,
+    // uzupełnij: email, temat, tresc
+  }
+};` },
+  { id: "4.3", nazwa: "4.3 Łączenie pól", tryb: "kazdy", dane: WEBHOOK,
+    opis: "Dodaj pole opis_dla_modelu = „Temat: … | Treść: …” oraz pole przyjeto = bieżąca data w formacie ISO.",
+    kod:
+`const b = $json.body;
+return {
+  json: {
+    email: b.email,
+    opis_dla_modelu: \`Temat: \${b.temat} | Treść: \${b.tresc}\`,
+    // uzupełnij: przyjeto (podpowiedź: new Date().toISOString())
+  }
+};` },
+  { id: "4.4", nazwa: "4.4 Brakujące wartości i typy (pokaz)", tryb: "kazdy", dane: WEBHOOK,
+    opis: "Ujednolić dane: e-mail – bez spacji i małymi literami; telefon – zawsze tekst; numer_zamowienia – pusty tekst zamiast null; zgoda – true/false; dodaj listę braki i status (kompletne / niekompletne).",
+    kod:
+`const DOZWOLONE_TEMATY = ["reklamacja", "zamowienie", "zwrot", "faktura", "pytanie_techniczne", "inne"];
+const b = $json.body ?? {};
+
+const email = (b.email ?? "").trim().toLowerCase();
+const telefon = String(b.telefon ?? "");
+const zgoda = ["tak", "on", "true"].includes(String(b.zgoda).toLowerCase());
+
+const braki = [];
+if (!email) braki.push("email");
+// uzupełnij: sprawdź tresc (min. 20 znaków po trim), temat (z listy) i zgodę
+
+return {
+  json: {
+    imie_nazwisko: (b.imie_nazwisko ?? "").trim(),
+    email, telefon, zgoda,
+    numer_zamowienia: b.numer_zamowienia ?? "",
+    temat: b.temat,
+    tresc: (b.tresc ?? "").trim(),
+    braki,
+    status: braki.length ? "niekompletne" : "kompletne"
+  }
+};` },
+  { id: "4.5", nazwa: "4.5 Popraw kod wygenerowany przez AI (dodatkowe)", tryb: "wszystkie", dane: WEBHOOK,
+    opis: "Ten kod zwrócił AI. Uruchom go, odczytaj komunikat błędu, znajdź 3 usterki i popraw. Zapisz, o co należało poprosić AI.",
+    kod:
+`// Kod z AI: „Przygotuj listę zgłoszeń z poprawnym e-mailem”
+const items = $input.all();
+return items
+  .filter(item => item.json.body.email.includes("@"))
+  .map(item => ({
+    email: item.json.body.email.toLowerCase(),
+    temat: item.json.body.temat
+  }))
+  .length;` },
+  { id: "4.6", nazwa: "4.6 Kontrola odpowiedzi modelu", tryb: "kazdy", dane: ODPOWIEDZI_MODELU,
+    opis: "Odpowiedź modelu to tekst. Wyciągnij z niej JSON, sprawdź kategorię i priorytet z listy dozwolonych. Zwróć { poprawna, bledy, dane }. To ten sam kod wykorzystamy w n8n (Moduł 9).",
+    kod:
+`const KATEGORIE = ["reklamacja", "zamowienie", "zwrot", "faktura", "pytanie_techniczne", "inne"];
+const PRIORYTETY = ["wysoki", "normalny", "niski"];
+const bledy = [];
+let dane = null;
+
+let tekst = String($json.odpowiedz ?? "");
+// 1. usuń ewentualne znaczniki \`\`\`json … \`\`\`
+tekst = tekst.replace(/\`\`\`(json)?/g, "").trim();
+// 2. wytnij fragment od pierwszego { do ostatniego }
+const start = tekst.indexOf("{"), koniec = tekst.lastIndexOf("}");
+if (start === -1 || koniec === -1) {
+  bledy.push("brak obiektu JSON w odpowiedzi");
+} else {
+  try {
+    dane = JSON.parse(tekst.slice(start, koniec + 1));
+  } catch (e) {
+    bledy.push("niepoprawny JSON: " + e.message);
+  }
+}
+// 3. uzupełnij: sprawdź dane.kategoria i dane.priorytet; brak pola propozycja_odpowiedzi to też błąd
+
+return { json: { poprawna: bledy.length === 0, bledy, dane } };` },
+  { id: "wlasne", nazwa: "Własne dane i kod", tryb: "wszystkie", dane: [{ przyklad: 1 }],
+    opis: "Wklej własne dane (tablicę obiektów) i kod – np. kod zaproponowany przez AI – zanim użyjesz go w n8n.",
+    kod: `return $input.all().map(item => ({ json: { ...item.json, sprawdzono: true } }));` }
+];
+
+// ---------- Uruchamianie kodu w sposób zbliżony do n8n ----------
+const el = id => document.getElementById(id);
+
+function naElementy(dane) {
+  const tablica = Array.isArray(dane) ? dane : [dane];
+  return tablica.map(x => (x && typeof x === "object" && "json" in x && Object.keys(x).length === 1) ? x : { json: x });
+}
+
+function sprawdzWynik(wynik, tryb) {
+  const lista = tryb === "kazdy" ? [wynik] : wynik;
+  if (!Array.isArray(lista)) {
+    throw new Error("Kod musi zwrócić TABLICĘ elementów, np. return [{ json: {...} }]. Otrzymano: " + typeof wynik);
+  }
+  return lista.map((x, i) => {
+    if (x === null || typeof x !== "object") throw new Error(`Element ${i} nie jest obiektem: ${JSON.stringify(x)}`);
+    if (!("json" in x)) return { json: x, _uwaga: "brak klucza json – n8n opakuje obiekt automatycznie, zalecany zapis { json: {...} }" };
+    return x;
+  });
+}
+
+function uruchom() {
+  const wyjscie = el("wyjscie"), status = el("status");
+  wyjscie.className = ""; status.className = "status"; status.textContent = "";
+  const logi = [];
+  const konsola = { log: (...a) => logi.push(a.map(x => typeof x === "string" ? x : JSON.stringify(x)).join(" ")) };
+  let elementy;
+  try {
+    elementy = naElementy(JSON.parse(el("wejscie").value));
+  } catch (e) {
+    wyjscie.className = "blad"; wyjscie.textContent = "Dane wejściowe nie są poprawnym JSON-em:\n" + e.message;
+    status.className = "status blad"; status.textContent = "Popraw dane wejściowe.";
+    return;
+  }
+  const tryb = el("tryb").value;
+  try {
+    const kod = el("kod").value;
+    const fn = new Function("$input", "$json", "console", '"use strict";\n' + kod);
+    let wyniki = [];
+    if (tryb === "wszystkie") {
+      const $input = { all: () => elementy, first: () => elementy[0], last: () => elementy[elementy.length - 1] };
+      wyniki = sprawdzWynik(fn($input, undefined, konsola), tryb);
+    } else {
+      for (const e of elementy) {
+        const $input = { item: e };
+        wyniki.push(...sprawdzWynik(fn($input, e.json, konsola), tryb));
+      }
+    }
+    wyjscie.textContent = JSON.stringify(wyniki, null, 2) + (logi.length ? "\n\n// console.log:\n" + logi.join("\n") : "");
+    status.className = "status ok";
+    status.textContent = `OK – elementów na wejściu: ${elementy.length}, na wyjściu: ${wyniki.length}`;
+  } catch (e) {
+    const linia = (e.stack || "").match(/<anonymous>:(\d+):(\d+)/);
+    const gdzie = linia ? ` (linia ${Number(linia[1]) - 3} kodu)` : "";
+    wyjscie.className = "blad";
+    wyjscie.textContent = `${e.name}: ${e.message}${gdzie}` + (logi.length ? "\n\nconsole.log:\n" + logi.join("\n") : "");
+    status.className = "status blad";
+    status.textContent = "Błąd wykonania – n8n zatrzymałby przepływ na tym węźle.";
+  }
+}
+
+function wczytajZadanie(id) {
+  const z = ZADANIA.find(x => x.id === id);
+  el("wejscie").value = JSON.stringify(z.dane, null, 2);
+  el("kod").value = z.kod;
+  el("tryb").value = z.tryb;
+  el("opis").textContent = z.opis;
+  el("wyjscie").textContent = ""; el("status").textContent = "";
+}
+
+ZADANIA.forEach(z => el("zadanie").add(new Option(z.nazwa, z.id)));
+el("zadanie").addEventListener("change", e => wczytajZadanie(e.target.value));
+el("uruchom").addEventListener("click", uruchom);
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") uruchom(); });
+el("kod").addEventListener("keydown", e => {   // Tab wstawia wcięcie zamiast przechodzić do kolejnego pola
+  if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); const t = e.target, p = t.selectionStart;
+    t.value = t.value.slice(0, p) + "  " + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = p + 2; }
+});
+wczytajZadanie("4.1");
+</script>
+</body>
+</html>

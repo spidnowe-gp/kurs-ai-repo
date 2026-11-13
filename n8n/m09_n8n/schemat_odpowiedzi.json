@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "kategoria": {
+      "type": "string",
+      "enum": ["reklamacja", "zamowienie", "zwrot", "faktura", "pytanie_techniczne", "inne"]
+    },
+    "priorytet": {
+      "type": "string",
+      "enum": ["wysoki", "normalny", "niski"]
+    },
+    "podsumowanie": { "type": "string" },
+    "brakujace_dane": { "type": "array", "items": { "type": "string" } },
+    "propozycja_odpowiedzi": { "type": "string" },
+    "wymaga_czlowieka": { "type": "boolean" }
+  },
+  "required": ["kategoria", "priorytet", "podsumowanie", "brakujace_dane", "propozycja_odpowiedzi", "wymaga_czlowieka"],
+  "additionalProperties": false
+}

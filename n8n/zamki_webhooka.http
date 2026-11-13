@@ -1,0 +1,59 @@
+# Ćwiczenie 6.7 – zamki na webhooku (VS Code + rozszerzenie REST Client)
+#
+# 1. Skopiuj ten plik do folderu, w którym leży plik .env (folder kurs).
+#    REST Client czyta zmienne {{$dotenv NAZWA}} z pliku .env w folderze pliku .http.
+# 2. Dopisz do .env (wartości takie same jak w poświadczeniach n8n – nie pokazuj ich na ekranie):
+#      ADRES_N8N=https://n8n-kurs.tailf6aa90.ts.net
+#      ZAMEK_LOGIN=…          (poświadczenie Basic Auth)
+#      ZAMEK_HASLO=…
+#      ZAMEK_KLUCZ=…          (poświadczenie Header Auth, nagłówek X-API-Key)
+# 3. Ustaw @kto na swoje imię (małe litery, bez polskich znaków) – takie jak w ścieżkach przepływu.
+# 4. Klikaj „Send Request” nad każdym żądaniem i zapisuj kod odpowiedzi.
+
+@n8n = {{$dotenv ADRES_N8N}}/webhook
+@kto = imie
+
+### 1. Basic Auth – bez danych logowania
+GET {{n8n}}/zamek-basic-{{kto}}
+
+### 2. Basic Auth – złe hasło
+GET {{n8n}}/zamek-basic-{{kto}}
+Authorization: Basic {{$dotenv ZAMEK_LOGIN}}:zle-haslo
+
+### 3. Basic Auth – poprawny login i hasło
+GET {{n8n}}/zamek-basic-{{kto}}
+Authorization: Basic {{$dotenv ZAMEK_LOGIN}}:{{$dotenv ZAMEK_HASLO}}
+
+### 4. Klucz w nagłówku – bez klucza
+GET {{n8n}}/zamek-klucz-{{kto}}
+
+### 5. Klucz w nagłówku – zły klucz
+GET {{n8n}}/zamek-klucz-{{kto}}
+X-API-Key: zly-klucz
+
+### 6. Klucz w nagłówku – poprawny klucz
+GET {{n8n}}/zamek-klucz-{{kto}}
+X-API-Key: {{$dotenv ZAMEK_KLUCZ}}
+
+### 7. Wydanie tokenu – bez logowania
+POST {{n8n}}/token-{{kto}}
+
+### 8. Wydanie tokenu – logowanie Basic Auth → token JWT ważny 15 minut
+# @name token
+POST {{n8n}}/token-{{kto}}
+Authorization: Basic {{$dotenv ZAMEK_LOGIN}}:{{$dotenv ZAMEK_HASLO}}
+
+### 9. Token JWT – bez tokenu
+GET {{n8n}}/zamek-jwt-{{kto}}
+
+### 10. Token JWT – token z żądania 8
+GET {{n8n}}/zamek-jwt-{{kto}}
+Authorization: Bearer {{token.response.body.token}}
+
+### 11. Token JWT – zmieniony token (dopisana litera psuje podpis)
+GET {{n8n}}/zamek-jwt-{{kto}}
+Authorization: Bearer {{token.response.body.token}}x
+
+### 12. Token JWT – nagłówek bez słowa „Bearer”
+GET {{n8n}}/zamek-jwt-{{kto}}
+Authorization: {{token.response.body.token}}
